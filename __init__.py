@@ -45,23 +45,24 @@ def extract_minutes(date_string):
 # Nouvelle route pour afficher les commits sous forme de graphique
 @app.route('/commits/')
 def get_commits():
-    # URL de l'API GitHub pour récupérer les commits
-    url = 'https://api.github.com/repos/OpenRSI/5MCSI_Metriques/commits'
-    
-    # Récupérer les données de l'API
-    response = urlopen(url)
-    raw_data = response.read()
-    json_data = json.loads(raw_data.decode('utf-8'))
-    
-    # Extraire les minutes des dates des commits
-    commit_times = []
-    for commit in json_data:
-        commit_date = commit['commit']['author']['date']
-        minutes = extract_minutes_from_date(commit_date)
-        commit_times.append(minutes)
-    
-    # Envoyer les minutes des commits à la page HTML
-    return render_template("commits.html", commits=commit_times)
+    try:
+        url = 'https://api.github.com/repos/OpenRSI/5MCSI_Metriques/commits'
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            return f"Erreur lors de la récupération des commits: {response.status_code}", 500
+
+        commits_data = response.json()
+
+        commits_info = []
+        for commit in commits_data:
+            commit_date = commit['commit']['author']['date']
+            commits_info.append({'date': commit_date})
+
+        return jsonify(commits=commits_info)
+
+    except Exception as e:
+        return f"Une erreur s'est produite : {str(e)}", 500
 
 # Fonction pour extraire les minutes d'un timestamp donné
 def extract_minutes_from_date(date_string):
