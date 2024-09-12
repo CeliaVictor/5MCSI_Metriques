@@ -1,18 +1,24 @@
-<html>
+<!DOCTYPE html>
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <title>Métrique</title>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   </head>
   <body>
-    <div id="chart_div" style="width: 900px; height: 500px;"></div>
+    <h2>Histogramme des températures de Tawarano</h2>
+    <div id="chart_div_histogram" style="width: 900px; height: 500px;"></div>
+
+    <h2>Diagramme en Donuts des températures de Tawarano</h2>
+    <div id="chart_div_donuts" style="width: 900px; height: 500px;"></div>
+
     <script>
       google.charts.load('current', { packages: ['corechart'] });
-      google.charts.setOnLoadCallback(drawBackgroundColor);
+      google.charts.setOnLoadCallback(drawCharts);
 
-      function drawBackgroundColor() {
-        function drawChart(data) {
-          // Convertir les données récupérées en un tableau utilisable par Google Charts
+      function drawCharts() {
+        // Fonction pour dessiner l'histogramme
+        function drawHistogram(data) {
           var dataTable = new google.visualization.DataTable();
           dataTable.addColumn('string', 'Date');
           dataTable.addColumn('number', 'Température');
@@ -22,25 +28,55 @@
             dataTable.addRow([date.toLocaleDateString(), entry.temp]);
           });
 
-          // Configurer les options de l'histogramme
           var options = {
             title: 'Distribution des températures de la ville de Tawarano',
-            legend: { position: 'none' }, // Pas de légende pour un histogramme
-            histogram: {
-              bucketSize: 5, // Vous pouvez ajuster la taille des "buckets"
-            },
+            legend: { position: 'none' },
+            histogram: { bucketSize: 5 }, // Taille des classes de température
           };
 
-          // Dessiner un histogramme au lieu d'un graphique en ligne
-          var chart = new google.visualization.Histogram(document.getElementById('chart_div'));
-          chart.draw(dataTable, options);
+          var histogram = new google.visualization.Histogram(document.getElementById('chart_div_histogram'));
+          histogram.draw(dataTable, options);
+        }
+
+        // Fonction pour dessiner le diagramme en "donuts"
+        function drawDonuts(data) {
+          var dataTable = new google.visualization.DataTable();
+          dataTable.addColumn('string', 'Température');
+          dataTable.addColumn('number', 'Occurrences');
+
+          var tempCount = {};
+
+          // Compter le nombre d'occurrences de chaque température (arrondi)
+          data.results.forEach(entry => {
+            var temp = Math.round(entry.temp);  // Arrondir à l'entier
+            if (tempCount[temp]) {
+              tempCount[temp]++;
+            } else {
+              tempCount[temp] = 1;
+            }
+          });
+
+          // Ajouter les données au tableau de données pour le diagramme
+          for (var temp in tempCount) {
+            dataTable.addRow([temp + "°C", tempCount[temp]]);
+          }
+
+          var options = {
+            title: 'Répartition des températures arrondies de la ville de Tawarano',
+            pieHole: 0.4, // Créer l'effet "donuts"
+            legend: { position: 'right' },
+          };
+
+          var donutsChart = new google.visualization.PieChart(document.getElementById('chart_div_donuts'));
+          donutsChart.draw(dataTable, options);
         }
 
         // Récupération de données depuis notre API /tawarano/
         fetch('/tawarano/')
           .then(response => response.json())
           .then(data => {
-            drawChart(data);
+            drawHistogram(data); // Dessiner l'histogramme
+            drawDonuts(data);    // Dessiner le diagramme en donuts
           });
       }
     </script>
