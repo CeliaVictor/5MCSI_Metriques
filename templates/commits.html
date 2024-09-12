@@ -11,7 +11,7 @@
 
       function drawChart() {
         // Les données des commits passées par Flask
-        var commitData = JSON.parse('{{ commits | tojson }}');
+        var commitData = {{ commits | tojson }};
 
         // Créer le tableau de données
         var data = new google.visualization.DataTable();
